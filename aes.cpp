@@ -2,7 +2,8 @@
 #include <cstdint>
 using namespace std;
 
-uint8_t sbox[16][16] = {
+// 1D Array to be used later to shorten code
+uint8_t SBox[16][16] = {
     {0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76},
     {0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0},
     {0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15},
@@ -21,21 +22,39 @@ uint8_t sbox[16][16] = {
     {0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16}
 };
 
-uint8_t state_array[4][4] = {};     // To be taken from user input later
+uint8_t stateArray[4][4] = {};     // To be taken from user input
 
-void shift_rows(){
-
-    uint8_t temp_state_array[4][4] = {};
+void substituteBytes(){
 
     for (int i = 0; i < 4; i++){
         for (int j = 0; j < 4; j++){
-            temp_state_array[i][j] = state_array[i][(j + i) % 4];
+
+            uint8_t value = stateArray[i][j];
+
+            // See Byte Shifts aswell or direct mapping with 1D SBox and check if Variable Type uint8_t is better?
+            int row = value / 16;
+            int col = value % 16;
+
+            stateArray[i][j] = SBox[row][col];
+
+        }
+    }
+    
+}
+
+void shiftRows(){
+
+    uint8_t tempStateArray[4][4];
+
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+            tempStateArray[i][j] = stateArray[i][(j + i) % 4];
         }
     }
 
     for (int i = 0; i < 4; i++){
         for (int j = 0; j < 4; j++){
-            state_array[i][j] = temp_state_array[i][j];
+            stateArray[i][j] = tempStateArray[i][j];
         }
     } 
 
