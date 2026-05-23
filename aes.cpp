@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstdint>
+#include <iomanip>
+#include <string>
 using namespace std;
 
 // 1D Array to be used later to shorten code
@@ -241,4 +243,44 @@ void aesEncrypt(uint8_t state[4][4]){
 
 }
 
+int main(){
 
+    cout << endl << "Enter 16 bytes of plaintext (in hexadecimal): ";
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // uint8_t is unsigned char, cin can't read hex into it directly so we read into int first then cast to uint8_t.
+
+            int temp;
+            cin >> hex >> temp;
+            stateArray[j][i] = (uint8_t)temp;
+        }
+    }
+
+    cout << endl << "Enter 16 bytes of key (in hexadecimal): ";
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // uint8_t is unsigned char, cin can't read hex into it directly so we read into int first then cast to uint8_t.
+
+            int temp;
+            cin >> hex >> temp;
+            key[j][i] = (uint8_t)temp;
+        }
+    }
+
+    aesEncrypt(stateArray);
+
+    cout << endl << "Encrypted Ciphertext: ";
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // setw(2) and setfill('0') ensure each byte always prints as exactly 2 hex digits
+            // cast to int so cout prints the numeric value not the ASCII character
+
+            cout << hex << setw(2) << setfill('0') << (int)stateArray[j][i] << " ";
+        }
+    }
+    cout << endl;
+
+}
