@@ -70,9 +70,13 @@ uint8_t xtime(uint8_t x){
 }
 
 uint8_t mul(uint8_t a, uint8_t b){
-    if (a == 1) return b;
-    if (a == 2) return xtime(b);
-    if (a == 3) return xtime(b) ^ b;
+    if (a == 0x01) return b;
+    if (a == 0x02) return xtime(b);
+    if (a == 0x03) return xtime(b) ^ b;
+    if (a == 0x09) return xtime(xtime(xtime(b))) ^ b;
+    if (a == 0x0B) return xtime(xtime(xtime(b))) ^ xtime(b) ^ b;
+    if (a == 0x0D) return xtime(xtime(xtime(b))) ^ xtime(xtime(b)) ^ b;
+    if (a == 0x0E) return xtime(xtime(xtime(b))) ^ xtime(xtime(b)) ^ xtime(b);
     return 0;
 }
 
@@ -159,6 +163,22 @@ void substituteBytes(uint8_t state[4][4]){
     
 }
 
+void inverseSubstituteBytes(uint8_t state[4][4]){
+
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // See Byte Shifts aswell or direct mapping with 1D SBox and check if Variable Type uint8_t is better?
+            int row = state[i][j] / 16;
+            int col = state[i][j] % 16;
+
+            state[i][j] = inverseSBox[row][col];
+
+        }
+    }
+    
+}
+
 void shiftRows(uint8_t state[4][4]){
 
     uint8_t tempStateArray[4][4];
@@ -166,6 +186,24 @@ void shiftRows(uint8_t state[4][4]){
     for (int i = 0; i < 4; i++){
         for (int j = 0; j < 4; j++){
             tempStateArray[i][j] = state[i][(j + i) % 4];
+        }
+    }
+
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+            state[i][j] = tempStateArray[i][j];
+        }
+    } 
+
+}
+
+void inverseShiftRows(uint8_t state[4][4]){
+
+    uint8_t tempStateArray[4][4];
+
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+            tempStateArray[i][j] = state[i][(j - i + 4) % 4];
         }
     }
 
@@ -192,6 +230,37 @@ void mixColumns(uint8_t state[4][4]){
                 
                 // product += mixColumnsMatrix[j][k] * stateArray[k][i]; This is Wrong. AES Multiplication is not like normal Multiplication we do. Its polynomial based.
                 product ^= mul(mixColumnsMatrix[j][k], state[k][i]);
+
+            }
+
+            tempStateArray[j][i] = product; 
+
+        }
+    }
+
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+            state[i][j] = tempStateArray[i][j];
+        }
+    }
+
+}
+
+void inverseMixColumns(uint8_t state[4][4]){
+
+    uint8_t product = 0;
+
+    uint8_t tempStateArray[4][4];
+
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+          
+            product = 0;
+
+            for (int k = 0; k < 4; k++){
+                
+                // product += mixColumnsMatrix[j][k] * stateArray[k][i]; This is Wrong. AES Multiplication is not like normal Multiplication we do. Its polynomial based.
+                product ^= mul(inverseMixColumnsMatrix[j][k], state[k][i]);
 
             }
 
@@ -243,6 +312,34 @@ void aesEncrypt(uint8_t state[4][4]){
 
 }
 
+void aesDecrypt(uint8_t state[4][4]){
+
+    uint8_t roundKey[4][4];
+
+    keyExpansion(key, expandedKey);
+
+    getRoundKey(10, roundKey);
+    addRoundKey(roundKey, state);
+
+    for (int round = 9; round > 0; round--){
+        inverseSubstituteBytes(state);
+        inverseShiftRows(state);
+        inverseMixColumns(state);
+
+        getRoundKey(round, roundKey);
+        addRoundKey(roundKey, state);
+
+    }
+
+    inverseSubstituteBytes(state);
+    inverseShiftRows(state);
+
+    getRoundKey(0, roundKey);
+    addRoundKey(roundKey, state);
+
+}
+
+
 int main(){
 
     cout << endl << "Enter 16 bytes of plaintext (in hexadecimal): ";
@@ -282,5 +379,8 @@ int main(){
         }
     }
     cout << endl;
+
+
+    // Decryption to be Added
 
 }
