@@ -2,9 +2,9 @@
 #include <cstdint>
 #include <iomanip>
 #include <string>
+#include <windows.h>
 using namespace std;
 
-// 1D Array to be used later to shorten code
 uint8_t SBox[16][16] = {
     {0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76},
     {0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0},
@@ -57,7 +57,7 @@ uint8_t inverseMixColumnsMatrix[4][4] = {
     {0x0B, 0x0D, 0x09, 0x0E}
 };
 
-uint8_t stateArray[4][4];     // To be taken from user input
+uint8_t stateArray[4][4];
 
 uint8_t key[4][4];
 
@@ -322,12 +322,14 @@ void aesDecrypt(uint8_t state[4][4]){
     addRoundKey(roundKey, state);
 
     for (int round = 9; round > 0; round--){
+
         inverseSubstituteBytes(state);
         inverseShiftRows(state);
-        inverseMixColumns(state);
 
         getRoundKey(round, roundKey);
         addRoundKey(roundKey, state);
+
+        inverseMixColumns(state);
 
     }
 
@@ -339,8 +341,7 @@ void aesDecrypt(uint8_t state[4][4]){
 
 }
 
-
-int main(){
+void encrypt(){
 
     cout << endl << "Enter 16 bytes of plaintext (in hexadecimal): ";
     for (int i = 0; i < 4; i++){
@@ -380,7 +381,124 @@ int main(){
     }
     cout << endl;
 
+}
 
-    // Decryption to be Added
+void decrypt(){
+
+    cout << endl << "Enter 16 bytes of ciphertext (in hexadecimal): ";
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // uint8_t is unsigned char, cin can't read hex into it directly so we read into int first then cast to uint8_t.
+
+            int temp;
+            cin >> hex >> temp;
+            stateArray[j][i] = (uint8_t)temp;
+        }
+    }
+
+    cout << endl << "Enter 16 bytes of key (in hexadecimal): ";
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // uint8_t is unsigned char, cin can't read hex into it directly so we read into int first then cast to uint8_t.
+
+            int temp;
+            cin >> hex >> temp;
+            key[j][i] = (uint8_t)temp;
+        }
+    }
+
+    aesDecrypt(stateArray);
+
+    cout << endl << "Decrypted Plaintext: ";
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+
+            // setw(2) and setfill('0') ensure each byte always prints as exactly 2 hex digits
+            // cast to int so cout prints the numeric value not the ASCII character
+
+            cout << hex << setw(2) << setfill('0') << (int)stateArray[j][i] << " ";
+        }
+    }
+    cout << endl;
 
 }
+
+
+int main(){
+
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+
+    int choice;
+
+    do{
+
+            cout << R"(
+   :::'###::::'########::'######::::::::::::::'##::::'#######:::'#######::
+   ::'## ##::: ##.....::'##... ##:::::::::::'####:::'##.... ##:'##.... ##:
+   :'##:. ##:: ##::::::: ##:::..::::::::::::.. ##:::..::::: ##: ##:::: ##:
+   '##:::. ##: ######:::. ######::'#######:::: ##::::'#######::: #######::
+    #########: ##...:::::..... ##:........:::: ##:::'##::::::::'##.... ##:
+    ##.... ##: ##:::::::'##::: ##::::::::::::: ##::: ##:::::::: ##:::: ##:
+    ##:::: ##: ########:. ######::::::::::::'######: #########:. #######::
+    ..:::::..::........:::......:::::::::::::......::.........:::.......:::
+    )" << endl;
+
+        cout << " 1. Encrypt Plaintext" << endl;
+        cout << " 2. Decrypt Ciphertext" << endl;
+
+        cout  << endl <<  "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice){
+            case 1:
+                encrypt();
+                break;
+            case 2:
+                decrypt();
+                break;
+            default:
+                cout << "Invalid choice." << endl;
+        } 
+
+        cout << endl << "Press 1 to return to menu or 0 to exit: ";
+        cin >> choice;
+
+        switch (choice){
+            case 1:
+                std::system("cls");
+                break;
+            case 0:
+                cout << "Exiting..." << endl;
+                break;
+            default:
+                cout << "Invalid choice. Returning to menu." << endl;
+                std::system("cls");
+        }
+    
+    } while (choice != 0);
+
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0);
+
+    return 0;
+
+}
+
+
+/*
+                                                NIST FIPS-197 AES-128 TEST VECTORS
++--------------------------------------------------------------+--------------------------------------------------------------+
+| PLAINTEXT / IV                                               | CIPHERTEXT                                                   |
++--------------------------------------------------------------+--------------------------------------------------------------+
+| f3 44 81 ec 3c c6 27 ba cd 5d c3 fb 08 f2 73 e6              | 03 36 76 3e 96 6d 92 59 5a 56 7c c9 ce 53 7f 5e              |
+| 97 98 c4 64 0b ad 75 c7 c3 22 7d b9 10 17 4e 72              | a9 a1 63 1b f4 99 69 54 eb c0 93 95 7b 23 45 89              |
+| 96 ab 5c 2f f6 12 d9 df aa e8 c3 1f 30 c4 21 68              | ff 4f 83 91 a6 a4 0c a5 b2 5d 23 be dd 44 a5 97              |
+| 6a 11 8a 87 45 19 e6 4e 99 63 79 8a 50 3f 1d 35              | dc 43 be 40 be 0e 53 71 2f 7e 2b f5 ca 70 72 09              |
+| cb 9f ce ec 81 28 6c a3 e9 89 bd 97 9b 0c b2 84              | 92 be ed ab 18 95 a9 4f aa 69 b6 32 e5 cc 47 ce              |
+| b2 6a eb 18 74 e4 7c a8 35 8f f2 23 78 f0 91 44              | 45 92 64 f4 79 8f 6a 78 ba cb 89 c1 5e d3 d6 01              |
+| 58 c8 e0 0b 26 31 68 6d 54 ea b8 4b 91 f0 ac a1              | 08 a4 e2 ef ec 8a 8e 33 12 ca 74 60 b9 04 0b bf              |
++--------------------------------------------------------------+--------------------------------------------------------------+
+
+KEY = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+*/
