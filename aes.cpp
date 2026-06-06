@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <string>
 #include <windows.h>
+#include <chrono>
+#include <thread>
 using namespace std;
 
 uint8_t SBox[16][16] = {
@@ -459,7 +461,7 @@ int main(){
                 decrypt();
                 break;
             default:
-                cout << "Invalid choice." << endl;
+                cout << endl << "Invalid choice." << endl;
         } 
 
         cout << endl << "Press 1 to return to menu or 0 to exit: ";
@@ -470,16 +472,19 @@ int main(){
                 std::system("cls");
                 break;
             case 0:
-                cout << "Exiting..." << endl;
+                cout << endl << "Exiting..." << endl;
+                std::this_thread::sleep_for(std::chrono::seconds(3));
+                std::system("cls");
                 break;
             default:
-                cout << "Invalid choice. Returning to menu." << endl;
+                cout << endl << "Invalid choice. Returning to menu." << endl;
+                std::this_thread::sleep_for(std::chrono::seconds(3));
                 std::system("cls");
         }
     
     } while (choice != 0);
 
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0);
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
 
     return 0;
 
